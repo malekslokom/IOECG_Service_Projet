@@ -1,0 +1,34 @@
+[
+    {
+        "id":1,
+        "nom": "Projet 1",
+        "dateCreation": "01/01/24",
+        "auteur": "Andy",
+        "version": "V1",
+        "type": "Classification"
+    },
+    {
+        "id":2,
+        "nom": "Projet 2",
+        "dateCreation": "01/01/24",
+        "auteur": "Andy",
+        "version": "V1",
+        "type": "Regression"
+    },
+    {
+        "id":3,
+        "nom": "Projet 3",
+        "dateCreation": "01/01/24",
+        "auteur": "Andy",
+        "version": "V1",
+        "type": "Visualisation"
+    },
+    {
+        "id":4,
+        "nom": "Projet 4",
+        "dateCreation": "01/01/24",
+        "auteur": "Andy",
+        "version": "V1",
+        "type": "Classification"
+    }
+]
