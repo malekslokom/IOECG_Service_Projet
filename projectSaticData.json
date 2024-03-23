@@ -2,7 +2,7 @@
     {
         "id":1,
         "nom": "Projet 1",
-        "dateCreation": "01/01/24",
+        "dateCreation": "01-01-2024",
         "auteur": "Andy",
         "version": "V1",
         "type": "Classification"
@@ -10,7 +10,7 @@
     {
         "id":2,
         "nom": "Projet 2",
-        "dateCreation": "01/01/24",
+        "dateCreation": "10-02-2024",
         "auteur": "Andy",
         "version": "V1",
         "type": "Regression"
@@ -18,7 +18,7 @@
     {
         "id":3,
         "nom": "Projet 3",
-        "dateCreation": "01/01/24",
+        "dateCreation": "29-02-2024",
         "auteur": "Andy",
         "version": "V1",
         "type": "Visualisation"
@@ -26,7 +26,7 @@
     {
         "id":4,
         "nom": "Projet 4",
-        "dateCreation": "01/01/24",
+        "dateCreation": "11-02-2024",
         "auteur": "Andy",
         "version": "V1",
         "type": "Classification"
