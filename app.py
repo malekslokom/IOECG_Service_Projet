@@ -3,14 +3,14 @@ from flask_cors import CORS
 import json
 from consul import register_service_with_consul,SERVICE_PORT
 from datetime import datetime
-from database import db,Projets
+from database import db,Projets,Analyses
 
 app = Flask(__name__)
 CORS(app)
 
 #connexion bdd
-app.config["SQLALCHEMY_DATABASE_URI"]= 'postgresql://postgres:postgresql@localhost:5432/IOECG'  #Windows
-#app.config["SQLALCHEMY_DATABASE_URI"]= 'postgresql://postgres:postgresql@localhost:5433/IOECG' #Mac
+#app.config["SQLALCHEMY_DATABASE_URI"]= 'postgresql://postgres:postgresql@localhost:5432/IOECG'  #Windows
+app.config["SQLALCHEMY_DATABASE_URI"]= 'postgresql://postgres:postgresql@localhost:5433/IOECG' #Mac
 db.init_app(app)   #Lie l'aplication à la base de donnée
 
 
@@ -26,7 +26,7 @@ def getAll():
                      'version': projet.description_project,
                      'dateCreation': projet.created_at.strftime('%d-%m-%Y'),
                      'auteur': projet.created_by,
-                     'type': projet.type_project.value} for projet in projets]
+                     'type': projet.type_project} for projet in projets]
     return jsonify(projets_data)
 
 # def getAll():
@@ -134,6 +134,23 @@ def deleteProjetById(id):
         return jsonify({"message": "Projet supprimé avec succès"}), 201
     else: 
         return jsonify({"error": "Project not found"}), 404
+
+@app.route('/api/projets/<int:id>/analyses',methods=["GET"])
+def getProjectAnalyses(id):
+    print(id)
+    all_analyses = Analyses.query.join(Projets,Analyses.id_project == Projets.id_project).filter_by(id_project=id).all()  # Récupère le projet 
+    serialized_analyses = [{
+            "id_analysis": analysis.id_analysis,
+            "id_project": analysis.id_project,
+            "created_at": analysis.created_at,
+            "last_updated_at": analysis.last_updated_at,
+            "name_analysis": analysis.name_analysis,
+            "description_analysis": analysis.description_analysis,
+            "created_by": analysis.created_by
+        } for analysis in all_analyses]
+
+    return jsonify(serialized_analyses)
+
 
 
 if __name__ == "__main__":
