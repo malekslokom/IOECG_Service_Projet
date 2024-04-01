@@ -131,3 +131,40 @@ def getAnalysesForProject(id_project):
     } for analyse in analyses]
 
     return jsonify(analyses_json)
+def createProjet():
+    print('here')
+    data = request.json  
+    print(data)
+    name_project = data.get('name_project')
+    created_at = data.get('created_at')
+    description = data.get('description_project')
+    created_by = data.get('created_by')   
+    type_project = data.get('type_project')
+    if not all([name_project, type_project]):
+        return jsonify({"error": "Veuillez fournir toutes les données requises"}), 400
+    
+    # Création du nouveau Projet
+    new_project = Projet(name_project=name_project, created_at=created_at, description_project=description, created_by=created_by,
+                              type_project=type_project)   
+
+    # Ajouter dans la bdd
+    db.session.add(new_project)
+    try:
+        # Valider et enregistrer les modifications dans la bdd
+        db.session.commit()
+        return jsonify({"message": "Projet créé avec succès"}), 201
+    except Exception as e:
+        # Erreur, annuler les modifications et renvoyer un message d'erreur
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+def deleteProjetById(id):
+    print(id)
+    projet = Projet.query.filter_by(id_project=id).first()  # Récupère le projet 
+    if projet:
+        db.session.delete(projet)
+        db.session.commit()
+        return jsonify({"message": "Projet supprimé avec succès"}), 201
+    else: 
+        return jsonify({"error": "Project not found"}), 404
+
