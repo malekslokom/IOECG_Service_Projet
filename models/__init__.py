@@ -4,4 +4,4 @@ from .dataset import Dataset
 from .ecg import ECG
 from .rapport import Rapport
 from .modele import Modele
-from .association import analyses_datasets, datasets_ecg, anlyses_modeles
+from .association import analyses_datasets, datasets_ecg, analyses_modeles
