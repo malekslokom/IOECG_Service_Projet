@@ -5,6 +5,7 @@ from models import *
 from database import db
 def health():
     return jsonify({"status": "up"})
+
 def getAllProjects():
     projects = Projet.query.all()
     if projects:
@@ -18,7 +19,11 @@ def getAllProjects():
             "type_project":project.type_project
         
         } for project in projects]
-        return jsonify(project_data)
+        response = jsonify(project_data)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        return response 
     else:
         return jsonify({"error": "No projects found"}), 404
     
