@@ -5,7 +5,10 @@ class Experience(db.Model):
     __tablename__ = 'experiences'
 
     id_experience = db.Column(db.Integer, primary_key=True)
+<<<<<<< HEAD
     name_experience = db.Column(db.String)
+=======
+>>>>>>> 989e07e7a150db3a99c2547e313029b06a56f57b
     models = db.Column(db.ARRAY(db.Integer), nullable=False)
     datasets = db.Column(db.ARRAY(db.Integer), nullable=False)
     nom_machine = db.Column(db.String())
