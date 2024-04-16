@@ -45,6 +45,7 @@ def getProjetById(id_project):
 def convert_date(date_str):
     """Converts a date string from DD-MM-YYYY to a datetime object."""
     return datetime.strptime(date_str, "%d-%m-%Y")
+
 def getProjectsWithFilter():
     start_date_str = request.args.get('start_date', '')
     end_date_str = request.args.get('end_date', '')
