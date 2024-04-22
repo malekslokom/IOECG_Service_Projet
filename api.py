@@ -1,13 +1,13 @@
 import json
 from datetime import datetime
 from flask import jsonify, request
-from models import *
-from database import db
+from models.datasets import db
+from models.datasets import Analyses, AnalysesDatasets, Datasets, Projet
 def health():
     return jsonify({"status": "up"})
 
 def getAllProjects():
-    projects = Projet.query.all()
+    projects = Projet.query.order_by(Projet.created_at.desc()).all()
     if projects:
         # Convertir les résultats en une liste de dictionnaires
         project_data=[{
@@ -85,44 +85,44 @@ def getProjectsWithFilter():
     
 
 
-
 def getDatasetsForProject(id_project):
- # Récupérer toutes les analyses pour ce projet
-    analyses = Analyse.query.filter_by(id_project=id_project).all()
+    # Récupérer toutes les analyses pour ce projet
+    analyses = Analyses.query.filter_by(id_project=id_project).all()
 
-    # Initialiser une liste vide pour stocker les identifiants des datasets
-    dataset_ids = []
+    # Initialiser une liste pour stocker les datasets avec leurs analyses
+    datasets_info = []
 
-    # Pour chaque analyse, récupérer les identifiants des datasets associés
+    # Pour chaque analyse, récupérer les datasets associés
     for analyse in analyses:
         # Utiliser la table d'association pour trouver les datasets liés à l'analyse
-        assoc_entries = db.session.query(analyses_datasets).filter_by(id_analysis=analyse.id_analysis).all()
+        assoc_entries = db.session.query(AnalysesDatasets).filter_by(id_analysis=analyse.id_analysis).all()
         for entry in assoc_entries:
-            if entry.id_dataset not in dataset_ids:  # Éviter les doublons
-                dataset_ids.append(entry.id_dataset)
+            # Vérifier si le dataset est déjà ajouté avec l'analyse actuelle
+            existing_entry = next((item for item in datasets_info if item['id_dataset'] == entry.id_dataset and item['id_analysis'] == analyse.id_analysis), None)
+            if not existing_entry:
+                # Récupérer l'objet Datasets
+                dataset = Datasets.query.filter_by(id_dataset=entry.id_dataset).first()
+                if dataset:
+                    datasets_info.append({
+                        'id_dataset': dataset.id_dataset,
+                        'created_at': dataset.created_at,
+                        'name_dataset': dataset.name_dataset,
+                        'description_dataset': dataset.description_dataset,
+                        'type_dataset': dataset.type_dataset,
+                        'leads_name': dataset.leads_name,
+                        'study_name': dataset.study_name,
+                        'study_details': dataset.study_details,
+                        'source_name': dataset.source_name,
+                        'source_details': dataset.source_details,
+                        'id_analysis': analyse.id_analysis  # Ajouter l'ID de l'analyse
+                    })
 
-    # Récupérer les objets Dataset à partir des identifiants
-    datasets = Dataset.query.filter(Dataset.id_dataset.in_(dataset_ids)).all()
-
-    # Convertir les datasets en format JSON
-    datasets_json = [{
-        'id_dataset': dataset.id_dataset,
-        'created_at':dataset.created_at,
-        'name_dataset': dataset.name_dataset,
-        'description_dataset': dataset.description_dataset,
-        'type_dataset': dataset.type_dataset,
-        'leads_name': dataset.leads_name,
-        'study_name': dataset.study_name,
-        'study_details': dataset.study_details,
-        'source_name': dataset.source_name,
-        'source_details': dataset.source_details
-    } for dataset in datasets]
-
-    return jsonify(datasets_json)
+    # Convertir les datasets en format JSON et retourner
+    return jsonify(datasets_info)
 
 def getAnalysesForProject(id_project):
  # Récupérer toutes les analyses pour ce projet
-    analyses = Analyse.query.filter_by(id_project=id_project).all()
+    analyses = Analyses.query.filter_by(id_project=id_project).all()
     print("analyses projet")
     # Convertir les analyses en format JSON
     analyses_json = [{
@@ -138,9 +138,7 @@ def getAnalysesForProject(id_project):
 
     return jsonify(analyses_json)
 def createProjet():
-    print('here')
     data = request.json  
-    print(data)
     name_project = data.get('name_project')
     created_at = data.get('created_at')
     description = data.get('description_project')
@@ -174,3 +172,80 @@ def deleteProjetById(id):
     else: 
         return jsonify({"error": "Project not found"}), 404
 
+def deleteDatasetsForProject(id_analysis,id_dataset):
+    try:
+        analysis_dataset = AnalysesDatasets.query \
+            .filter_by(id_analysis=id_analysis, id_dataset=id_dataset) \
+            .first()
+
+        if not analysis_dataset:
+            return jsonify({'error': 'Analysis dataset association not found'}), 404
+
+        db.session.delete(analysis_dataset)
+        db.session.commit()
+
+        return jsonify({'message': 'Datasets deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+def convert_date(date_str):
+    """Converts a date string from DD-MM-YYYY to a datetime object."""
+    return datetime.strptime(date_str, "%d-%m-%Y")
+
+def getDatasetsProjetctWithFilter(id_project):
+    start_date_str = request.args.get('start_date', '')
+    end_date_str = request.args.get('end_date', '')
+    search_term = request.args.get('search_term', '').lower()
+
+    start_date = convert_date(start_date_str) if start_date_str else None
+    end_date = convert_date(end_date_str) if end_date_str else None
+
+    query = db.session.query(
+        Datasets.id_dataset,
+        Datasets.created_at,
+        Datasets.name_dataset,
+        Datasets.description_dataset,
+        Datasets.type_dataset,
+        Datasets.leads_name,
+        Datasets.study_name,
+        Datasets.study_details,
+        Datasets.source_name,
+        Datasets.source_details,
+        AnalysesDatasets.id_analysis
+    ).join(AnalysesDatasets, AnalysesDatasets.id_dataset == Datasets.id_dataset)\
+      .join(Analyses, Analyses.id_analysis == AnalysesDatasets.id_analysis)\
+      .filter(Analyses.id_project == id_project)
+
+    if start_date:
+        query = query.filter(Datasets.created_at >= start_date)
+    if end_date:
+        query = query.filter(Datasets.created_at <= end_date)
+    if search_term:
+        query = query.filter((Datasets.name_dataset.ilike(f'%{search_term}%')) |
+                             (Datasets.description_dataset.ilike(f'%{search_term}%')) |
+                             (Datasets.type_dataset.ilike(f'%{search_term}%')) |
+                             (Datasets.leads_name.ilike(f'%{search_term}%')) |
+                             (Datasets.study_name.ilike(f'%{search_term}%')) |
+                             (Datasets.study_details.ilike(f'%{search_term}%')) |
+                             (Datasets.source_name.ilike(f'%{search_term}%')) |
+                             (Datasets.source_details.ilike(f'%{search_term}%')))
+
+    filtered_datasets = query.all()
+
+    if filtered_datasets:
+        dataset_data = [{
+            "id_dataset": dataset.id_dataset,
+            "created_at": dataset.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            "name_dataset": dataset.name_dataset,
+            "description_dataset": dataset.description_dataset,
+            "type_dataset": dataset.type_dataset,
+            "leads_name": dataset.leads_name,
+            "study_name": dataset.study_name,
+            "study_details": dataset.study_details,
+            "source_name": dataset.source_name,
+            "source_details": dataset.source_details,
+            "id_analysis": dataset.id_analysis  # Include the ID of the analysis
+        } for dataset in filtered_datasets]
+        return jsonify(dataset_data)
+    else:
+        return jsonify([])  # Return an empty list instead of an error
